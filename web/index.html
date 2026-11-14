@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scientific Calculator & Math Assistant</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+  </style>
+</head>
+<body class="bg-[#1e1e2e] text-[#cdd6f4] min-h-screen antialiased flex flex-col items-center p-3 sm:p-6">
+
+  <!-- Main Container -->
+  <div class="w-full max-w-4xl bg-[#181825] border border-[#313244] rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+    
+    <!-- Top Header -->
+    <header class="bg-[#11111b] border-b border-[#313244] px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-[#89b4fa] shadow-[0_0_8px_#89b4fa]"></span>
+        <h1 class="text-base font-bold tracking-wider text-[#89b4fa]">SCIENTIFIC CALCULATOR <span class="text-[#cba6f7]">& MATH ASSISTANT</span></h1>
+      </div>
+      <!-- Mode Badge & Angle Toggle -->
+      <div class="flex items-center gap-3 text-xs mono">
+        <div class="flex items-center bg-[#1e1e2e] border border-[#313244] rounded-lg p-0.5">
+          <button id="btn-deg" onclick="setAngleMode('DEG')" class="px-2.5 py-1 rounded font-bold bg-[#89b4fa] text-[#11111b]">DEG</button>
+          <button id="btn-rad" onclick="setAngleMode('RAD')" class="px-2.5 py-1 rounded text-[#a6adc8] hover:text-[#cdd6f4]">RAD</button>
+          <button id="btn-grad" onclick="setAngleMode('GRAD')" class="px-2.5 py-1 rounded text-[#a6adc8] hover:text-[#cdd6f4]">GRAD</button>
+        </div>
+        <span id="mem-status" class="text-[#f9e2af] font-semibold hidden">M = 0</span>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="flex border-b border-[#313244] bg-[#181825] px-2 text-xs font-semibold overflow-x-auto">
+      <button onclick="switchTab('calc')" id="tab-nav-calc" class="tab-btn px-4 py-3 border-b-2 border-[#89b4fa] text-[#89b4fa] flex items-center gap-1.5 whitespace-nowrap">
+        <span>🧮</span> Calculator
+      </button>
+      <button onclick="switchTab('graph')" id="tab-nav-graph" class="tab-btn px-4 py-3 border-b-2 border-transparent text-[#a6adc8] hover:text-[#cdd6f4] flex items-center gap-1.5 whitespace-nowrap">
+        <span>📈</span> 2D Grapher
+      </button>
+      <button onclick="switchTab('assistant')" id="tab-nav-assistant" class="tab-btn px-4 py-3 border-b-2 border-transparent text-[#a6adc8] hover:text-[#cdd6f4] flex items-center gap-1.5 whitespace-nowrap">
+        <span>💡</span> Math Assistant
+      </button>
+      <button onclick="switchTab('units')" id="tab-nav-units" class="tab-btn px-4 py-3 border-b-2 border-transparent text-[#a6adc8] hover:text-[#cdd6f4] flex items-center gap-1.5 whitespace-nowrap">
+        <span>📐</span> Units & Constants
+      </button>
+      <button onclick="switchTab('matrix')" id="tab-nav-matrix" class="tab-btn px-4 py-3 border-b-2 border-transparent text-[#a6adc8] hover:text-[#cdd6f4] flex items-center gap-1.5 whitespace-nowrap">
+        <span>📊</span> Matrix & Stats
+      </button>
+    </nav>
+
+    <!-- TAB 1: CALCULATOR -->
+    <section id="tab-calc" class="p-4 sm:p-6 space-y-4">
+      <!-- Screen Display -->
+      <div class="bg-[#11111b] border border-[#313244] rounded-xl p-4 shadow-inner flex flex-col justify-end min-h-[140px]">
+        <div id="calc-history" class="text-right mono text-xs sm:text-sm text-[#6c7086] min-h-[1.25rem] truncate"></div>
+        <div id="calc-expr" class="text-right mono text-base sm:text-lg text-[#a6adc8] min-h-[1.5rem] tracking-wide truncate"></div>
+        <div id="calc-result" class="text-right mono text-3xl sm:text-4xl font-extrabold text-[#cdd6f4] min-h-[2.75rem] truncate mt-1">0</div>
+        
+        <!-- Base Conversions Strip -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-3 mt-3 border-t border-[#313244] text-[11px] mono text-[#89b4fa]">
+          <span id="base-dec">DEC: 0</span>
+          <span id="base-hex">HEX: 0x0</span>
+          <span id="base-oct">OCT: 0o0</span>
+          <span id="base-bin">BIN: 0b0</span>
+        </div>
+      </div>
+
+      <!-- Quick Action Pills -->
+      <div class="flex items-center gap-2">
+        <button onclick="plotFromCalc()" class="px-3 py-1.5 rounded-lg bg-[#313244] hover:bg-[#45475a] text-[#89b4fa] font-semibold text-xs flex items-center gap-1 transition">
+          📈 Plot Expression
+        </button>
+        <button onclick="explainFromCalc()" class="px-3 py-1.5 rounded-lg bg-[#313244] hover:bg-[#45475a] text-[#cba6f7] font-semibold text-xs flex items-center gap-1 transition">
+          💡 Ask Assistant to Explain
+        </button>
+      </div>
+
+      <!-- Keypad Grid (6 columns) -->
+      <div class="grid grid-cols-6 gap-2 text-xs sm:text-sm font-semibold mono select-none">
+        <!-- Row 0: Memory & Clear -->
+        <button onclick="memClear()" class="p-3 rounded-lg bg-[#f9e2af]/10 text-[#f9e2af] hover:bg-[#f9e2af]/20 transition">MC</button>
+        <button onclick="memRecall()" class="p-3 rounded-lg bg-[#f9e2af]/10 text-[#f9e2af] hover:bg-[#f9e2af]/20 transition">MR</button>
+        <button onclick="memAdd()" class="p-3 rounded-lg bg-[#f9e2af]/10 text-[#f9e2af] hover:bg-[#f9e2af]/20 transition">M+</button>
+        <button onclick="memSub()" class="p-3 rounded-lg bg-[#f9e2af]/10 text-[#f9e2af] hover:bg-[#f9e2af]/20 transition">M−</button>
+        <button onclick="calcClear()" class="p-3 rounded-lg bg-[#f38ba8]/20 text-[#f38ba8] hover:bg-[#f38ba8]/30 font-bold transition">AC</button>
+        <button onclick="calcBackspace()" class="p-3 rounded-lg bg-[#313244] text-[#a6adc8] hover:bg-[#45475a] transition">⌫</button>
+
+        <!-- Row 1: Trig & Log -->
+        <button onclick="calcFunc('sin')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">sin</button>
+        <button onclick="calcFunc('cos')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">cos</button>
+        <button onclick="calcFunc('tan')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">tan</button>
+        <button onclick="calcFunc('log')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">log</button>
+        <button onclick="calcFunc('ln')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">ln</button>
+        <button onclick="calcInput('pi')" class="p-3 rounded-lg bg-[#a6e3a1]/20 text-[#a6e3a1] hover:bg-[#a6e3a1]/30 transition">π</button>
+
+        <!-- Row 2: Inverse Trig & Roots -->
+        <button onclick="calcFunc('asin')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">sin⁻¹</button>
+        <button onclick="calcFunc('acos')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">cos⁻¹</button>
+        <button onclick="calcFunc('atan')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">tan⁻¹</button>
+        <button onclick="calcFunc('sqrt')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">√</button>
+        <button onclick="calcInput('^2')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">x²</button>
+        <button onclick="calcInput('e')" class="p-3 rounded-lg bg-[#a6e3a1]/20 text-[#a6e3a1] hover:bg-[#a6e3a1]/30 transition">e</button>
+
+        <!-- Row 3: Hyperbolic & Powers -->
+        <button onclick="calcFunc('sinh')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">sinh</button>
+        <button onclick="calcFunc('cosh')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">cosh</button>
+        <button onclick="calcFunc('tanh')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">tanh</button>
+        <button onclick="calcFunc('cbrt')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">∛</button>
+        <button onclick="calcInput('^')" class="p-3 rounded-lg bg-[#45475a] text-[#89b4fa] hover:bg-[#585b70] transition">xʸ</button>
+        <button onclick="calcFunc('exp')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">eˣ</button>
+
+        <!-- Row 4: Discrete Math -->
+        <button onclick="calcFunc('factorial')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">n!</button>
+        <button onclick="calcFunc('abs')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">|x|</button>
+        <button onclick="calcFunc('log2')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">log₂</button>
+        <button onclick="calcInput('(')" class="p-3 rounded-lg bg-[#45475a] text-[#89b4fa] hover:bg-[#585b70] transition">(</button>
+        <button onclick="calcInput(')')" class="p-3 rounded-lg bg-[#45475a] text-[#89b4fa] hover:bg-[#585b70] transition">)</button>
+        <button onclick="calcInput('%')" class="p-3 rounded-lg bg-[#45475a] text-[#89b4fa] hover:bg-[#585b70] transition">%</button>
+
+        <!-- Row 5: Permutation, Combination, Number Theory -->
+        <button onclick="calcFunc('perm')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">nPr</button>
+        <button onclick="calcFunc('comb')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">nCr</button>
+        <button onclick="calcFunc('gcd')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">GCD</button>
+        <button onclick="calcFunc('lcm')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">LCM</button>
+        <button onclick="calcFunc('isPrime')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">Prime?</button>
+        <button onclick="insertAns()" class="p-3 rounded-lg bg-[#a6e3a1]/20 text-[#a6e3a1] hover:bg-[#a6e3a1]/30 transition">Ans</button>
+
+        <!-- Row 6: Digits 7, 8, 9 -->
+        <button onclick="calcInput('7')" class="p-3 rounded-lg bg-[#313244] text-base hover:bg-[#45475a] transition">7</button>
+        <button onclick="calcInput('8')" class="p-3 rounded-lg bg-[#313244] text-base hover:bg-[#45475a] transition">8</button>
+        <button onclick="calcInput('9')" class="p-3 rounded-lg bg-[#313244] text-base hover:bg-[#45475a] transition">9</button>
+        <button onclick="calcClear()" class="p-3 rounded-lg bg-[#f38ba8]/20 text-[#f38ba8] hover:bg-[#f38ba8]/30 transition">C</button>
+        <button onclick="toggleSign()" class="p-3 rounded-lg bg-[#45475a] text-[#89b4fa] hover:bg-[#585b70] transition">±</button>
+        <button onclick="calcInput('/')" class="p-3 rounded-lg bg-[#45475a] text-lg text-[#89b4fa] hover:bg-[#585b70] transition">÷</button>
+
+        <!-- Row 7: Digits 4, 5, 6 -->
+        <button onclick="calcInput('4')" class="p-3 rounded-lg bg-[#313244] text-base hover:bg-[#45475a] transition">4</button>
+        <button onclick="calcInput('5')" class="p-3 rounded-lg bg-[#313244] text-base hover:bg-[#45475a] transition">5</button>
+        <button onclick="calcInput('6')" class="p-3 rounded-lg bg-[#313244] text-base hover:bg-[#45475a] transition">6</button>
+        <button onclick="calcInput('*')" class="p-3 rounded-lg bg-[#45475a] text-lg text-[#89b4fa] hover:bg-[#585b70] transition">×</button>
+        <button onclick="calcInput('x')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">x</button>
+        <button onclick="calcInput('^')" class="p-3 rounded-lg bg-[#45475a] text-[#89b4fa] hover:bg-[#585b70] transition">^</button>
+
+        <!-- Row 8: Digits 1, 2, 3 -->
+        <button onclick="calcInput('1')" class="p-3 rounded-lg bg-[#313244] text-base hover:bg-[#45475a] transition">1</button>
+        <button onclick="calcInput('2')" class="p-3 rounded-lg bg-[#313244] text-base hover:bg-[#45475a] transition">2</button>
+        <button onclick="calcInput('3')" class="p-3 rounded-lg bg-[#313244] text-base hover:bg-[#45475a] transition">3</button>
+        <button onclick="calcInput('-')" class="p-3 rounded-lg bg-[#45475a] text-lg text-[#89b4fa] hover:bg-[#585b70] transition">−</button>
+        <button onclick="calcFunc('floor')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">⌊x⌋</button>
+        <button onclick="calcFunc('ceil')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">⌈x⌉</button>
+
+        <!-- Row 9: 0, ., +, = -->
+        <button onclick="calcInput('0')" class="p-3 rounded-lg bg-[#313244] text-base hover:bg-[#45475a] transition">0</button>
+        <button onclick="calcInput('.')" class="p-3 rounded-lg bg-[#313244] text-base hover:bg-[#45475a] transition">.</button>
+        <button onclick="calcInput('10^')" class="p-3 rounded-lg bg-[#313244] text-[#b4befe] hover:bg-[#45475a] transition">10ˣ</button>
+        <button onclick="calcInput('+')" class="p-3 rounded-lg bg-[#45475a] text-lg text-[#89b4fa] hover:bg-[#585b70] transition">+</button>
+        <button onclick="insertAns()" class="p-3 rounded-lg bg-[#a6e3a1]/20 text-[#a6e3a1] hover:bg-[#a6e3a1]/30 transition">Ans</button>
+        <button onclick="calcEvaluate()" class="p-3 rounded-lg bg-[#89b4fa] text-[#11111b] font-extrabold text-lg shadow-lg hover:bg-[#b4befe] transition">=</button>
+      </div>
+    </section>
+
+    <!-- TAB 2: 2D FUNCTION GRAPHER -->
+    <section id="tab-graph" class="p-4 sm:p-6 space-y-4 hidden">
+      <!-- Graph Inputs & Controls -->
+      <div class="bg-[#11111b] border border-[#313244] rounded-xl p-4 space-y-3">
+        <!-- f(x) input -->
+        <div class="flex items-center gap-2">
+          <span class="mono font-bold text-[#89b4fa] w-12 text-right">f(x) =</span>
+          <input id="graph-f" type="text" value="sin(x)" class="flex-1 bg-[#1e1e2e] border border-[#313244] rounded-lg px-3 py-1.5 mono text-sm outline-none focus:border-[#89b4fa]" placeholder="e.g. sin(x) or x^2 - 4">
+        </div>
+        <!-- g(x) input -->
+        <div class="flex items-center gap-2">
+          <span class="mono font-bold text-[#fab387] w-12 text-right">g(x) =</span>
+          <input id="graph-g" type="text" value="cos(x)" class="flex-1 bg-[#1e1e2e] border border-[#313244] rounded-lg px-3 py-1.5 mono text-sm outline-none focus:border-[#fab387]" placeholder="e.g. cos(x) or 2*x">
+        </div>
+        <!-- Toolbar -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+          <div class="flex items-center gap-2">
+            <button onclick="redrawGraph()" class="px-4 py-1.5 rounded-lg bg-[#89b4fa] text-[#11111b] font-bold text-xs hover:bg-[#b4befe] shadow transition">
+              ⚡ Plot Curves
+            </button>
+            <button onclick="zoomGraph(1.2)" class="px-3 py-1.5 rounded-lg bg-[#313244] hover:bg-[#45475a] text-xs font-semibold">🔍+ In</button>
+            <button onclick="zoomGraph(1/1.2)" class="px-3 py-1.5 rounded-lg bg-[#313244] hover:bg-[#45475a] text-xs font-semibold">🔍- Out</button>
+            <button onclick="resetGraphView()" class="px-3 py-1.5 rounded-lg bg-[#313244] hover:bg-[#45475a] text-xs font-semibold">↺ Reset</button>
+          </div>
+          <!-- Presets -->
+          <div class="flex items-center gap-1.5 text-xs overflow-x-auto">
+            <span class="text-[#6c7086]">Presets:</span>
+            <button onclick="setGraphPreset('sin(x)', 'cos(x)')" class="px-2 py-1 rounded bg-[#1e1e2e] border border-[#313244] hover:bg-[#313244]">sin & cos</button>
+            <button onclick="setGraphPreset('x^2 - 4', '')" class="px-2 py-1 rounded bg-[#1e1e2e] border border-[#313244] hover:bg-[#313244]">x² - 4</button>
+            <button onclick="setGraphPreset('x^3 - 3*x', '')" class="px-2 py-1 rounded bg-[#1e1e2e] border border-[#313244] hover:bg-[#313244]">x³ - 3x</button>
+            <button onclick="setGraphPreset('exp(-x^2)', '')" class="px-2 py-1 rounded bg-[#1e1e2e] border border-[#313244] hover:bg-[#313244]">Gaussian</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive Canvas Area -->
+      <div class="relative bg-[#11111b] border border-[#313244] rounded-xl overflow-hidden shadow-inner">
+        <canvas id="graphCanvas" width="800" height="420" class="w-full h-[420px] block cursor-crosshair"></canvas>
+        <div id="graph-hud" class="absolute bottom-2 left-3 bg-[#181825]/90 border border-[#313244] rounded px-2.5 py-1 text-xs mono text-[#cdd6f4]">
+          x: 0.00, y: 0.00
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: MATH ASSISTANT -->
+    <section id="tab-assistant" class="p-4 sm:p-6 space-y-4 hidden">
+      <!-- Status Banner -->
+      <div class="bg-[#11111b] border border-[#313244] rounded-xl px-4 py-2.5 flex items-center justify-between text-xs">
+        <span class="text-[#a6e3a1] font-bold">● Offline Mathematical Knowledge & Symbolic Engine (Instant)</span>
+        <span class="text-[#6c7086]">Solves calculus, equations, geometry, finance & physics</span>
+      </div>
+
+      <!-- Quick Chips -->
+      <div class="flex flex-wrap items-center gap-2 text-xs">
+        <span class="text-[#6c7086]">Try asking:</span>
+        <button onclick="setAssistantPrompt('solve 2x + 5 = 15')" class="px-2.5 py-1 rounded bg-[#313244] hover:bg-[#45475a] text-[#89b4fa]">solve 2x + 5 = 15</button>
+        <button onclick="setAssistantPrompt('derivative of 3x^3 - 5x^2 + 7')" class="px-2.5 py-1 rounded bg-[#313244] hover:bg-[#45475a] text-[#89b4fa]">d/dx 3x³-5x²+7</button>
+        <button onclick="setAssistantPrompt('integrate x^2 from 0 to 3')" class="px-2.5 py-1 rounded bg-[#313244] hover:bg-[#45475a] text-[#89b4fa]">∫ x² dx from 0 to 3</button>
+        <button onclick="setAssistantPrompt('what is calculus')" class="px-2.5 py-1 rounded bg-[#313244] hover:bg-[#45475a] text-[#cba6f7]">what is calculus</button>
+        <button onclick="setAssistantPrompt('compound interest $10000 at 5% for 10 yrs')" class="px-2.5 py-1 rounded bg-[#313244] hover:bg-[#45475a] text-[#fab387]">compound interest</button>
+      </div>
+
+      <!-- Chat Stream -->
+      <div id="assistant-chat" class="bg-[#11111b] border border-[#313244] rounded-xl p-4 min-h-[300px] max-h-[420px] overflow-y-auto space-y-3 text-xs sm:text-sm">
+        <div class="p-3 rounded-lg bg-[#313244]/40 border border-[#313244] text-[#a6adc8] leading-relaxed">
+          <p class="font-bold text-[#cba6f7] mb-1">💡 Math Assistant is ready!</p>
+          <p>Ask any mathematical word problem, calculus derivation, equation solution, geometry, physics formula, or concept explanation in natural language.</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons for latest answer -->
+      <div id="assistant-actions" class="flex items-center gap-2 hidden">
+        <button id="btn-insert-calc" onclick="insertAnswerToCalc()" class="px-3 py-1.5 rounded-lg bg-[#313244] hover:bg-[#45475a] text-[#89b4fa] font-semibold text-xs">
+          📥 Insert Answer into Calculator
+        </button>
+        <button id="btn-plot-assistant" onclick="plotFromAssistant()" class="px-3 py-1.5 rounded-lg bg-[#313244] hover:bg-[#45475a] text-[#fab387] font-semibold text-xs">
+          📈 Plot Function on Grapher
+        </button>
+      </div>
+
+      <!-- Input Bar -->
+      <div class="flex items-center gap-2">
+        <input id="assistant-input" type="text" placeholder="Type a math question or equation..." class="flex-1 bg-[#11111b] border border-[#313244] rounded-xl px-4 py-3 text-sm outline-none focus:border-[#cba6f7]" onkeydown="if(event.key==='Enter') sendAssistantQuery()">
+        <button onclick="sendAssistantQuery()" id="btn-ask" class="px-5 py-3 rounded-xl bg-[#cba6f7] text-[#11111b] font-bold text-sm shadow hover:bg-[#d5baf8] transition">
+          💡 Solve
+        </button>
+      </div>
+    </section>
+
+    <!-- TAB 4: UNITS & CONSTANTS -->
+    <section id="tab-units" class="p-4 sm:p-6 space-y-6 hidden">
+      <!-- Unit Converter -->
+      <div class="bg-[#11111b] border border-[#313244] rounded-xl p-4 sm:p-5 space-y-4">
+        <h2 class="text-sm font-bold text-[#89b4fa] tracking-wider uppercase">🔄 Multi-Category Unit Converter</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <!-- Category -->
+          <div>
+            <label class="block text-xs font-semibold text-[#6c7086] mb-1">Category</label>
+            <select id="unit-cat" onchange="onCategoryChange()" class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-3 py-2 text-xs outline-none focus:border-[#89b4fa]">
+              <option value="Length">Length</option>
+              <option value="Mass">Mass</option>
+              <option value="Temperature">Temperature</option>
+              <option value="Speed">Speed</option>
+              <option value="Area">Area</option>
+              <option value="Volume">Volume</option>
+              <option value="Pressure">Pressure</option>
+              <option value="Energy">Energy</option>
+              <option value="Power">Power</option>
+              <option value="Time">Time</option>
+              <option value="Digital Data">Digital Data</option>
+              <option value="Angle">Angle</option>
+            </select>
+          </div>
+          <!-- From Unit & Value -->
+          <div>
+            <label class="block text-xs font-semibold text-[#6c7086] mb-1">From</label>
+            <div class="space-y-1.5">
+              <input id="unit-from-val" type="number" value="1" oninput="runConversion()" class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-3 py-1.5 mono text-xs outline-none focus:border-[#89b4fa]">
+              <select id="unit-from-type" onchange="runConversion()" class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-3 py-1.5 text-xs outline-none focus:border-[#89b4fa]"></select>
+            </div>
+          </div>
+          <!-- To Unit & Value -->
+          <div>
+            <label class="block text-xs font-semibold text-[#6c7086] mb-1">To</label>
+            <div class="space-y-1.5">
+              <div id="unit-to-val" class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-3 py-1.5 mono text-xs font-bold text-[#a6e3a1] truncate min-h-[30px] flex items-center">
+                1000
+              </div>
+              <select id="unit-to-type" onchange="runConversion()" class="w-full bg-[#1e1e2e] border border-[#313244] rounded-lg px-3 py-1.5 text-xs outline-none focus:border-[#89b4fa]"></select>
+            </div>
+          </div>
+        </div>
+        <button onclick="sendUnitToCalc()" class="px-3 py-1.5 rounded-lg bg-[#313244] hover:bg-[#45475a] text-[#89b4fa] font-semibold text-xs transition">
+          📥 Send Result to Calculator
+        </button>
+      </div>
+
+      <!-- Physical Constants Explorer -->
+      <div class="bg-[#11111b] border border-[#313244] rounded-xl p-4 sm:p-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold text-[#cba6f7] tracking-wider uppercase">⚛️ CODATA Physical Constants</h2>
+          <input id="const-search" type="text" placeholder="Search constant..." oninput="filterConstants()" class="bg-[#1e1e2e] border border-[#313244] rounded-lg px-3 py-1 text-xs outline-none focus:border-[#cba6f7]">
+        </div>
+        <div class="max-h-[260px] overflow-y-auto border border-[#313244] rounded-lg">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-[#1e1e2e] text-[#a6adc8] sticky top-0 border-b border-[#313244]">
+              <tr>
+                <th class="p-2.5">Symbol</th>
+                <th class="p-2.5">Name</th>
+                <th class="p-2.5 text-right">Value</th>
+                <th class="p-2.5">Unit</th>
+                <th class="p-2.5 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody id="constants-tbody" class="divide-y divide-[#313244] mono"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: MATRIX & STATS -->
+    <section id="tab-matrix" class="p-4 sm:p-6 space-y-6 hidden">
+      <!-- Matrix Sub-Panel -->
+      <div class="bg-[#11111b] border border-[#313244] rounded-xl p-4 sm:p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-bold text-[#89b4fa] tracking-wider uppercase">🔢 Matrix Algebra</h2>
+          <div class="flex items-center gap-2 text-xs">
+            <label><input type="radio" name="msize" value="2" checked onchange="buildMatrixInputs(2)"> 2×2</label>
+            <label><input type="radio" name="msize" value="3" onchange="buildMatrixInputs(3)"> 3×3</label>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-6">
+          <div id="matrix-grid" class="grid gap-2"></div>
+          <div class="flex flex-col gap-2">
+            <button onclick="computeMatrix('det')" class="px-4 py-2 rounded-lg bg-[#313244] hover:bg-[#45475a] text-xs font-bold text-[#cdd6f4]">Determinant (|A|)</button>
+            <button onclick="computeMatrix('inverse')" class="px-4 py-2 rounded-lg bg-[#313244] hover:bg-[#45475a] text-xs font-bold text-[#cdd6f4]">Inverse (A⁻¹)</button>
+            <button onclick="computeMatrix('transpose')" class="px-4 py-2 rounded-lg bg-[#313244] hover:bg-[#45475a] text-xs font-bold text-[#cdd6f4]">Transpose (Aᵀ)</button>
+          </div>
+          <div id="matrix-result" class="flex-1 bg-[#1e1e2e] border border-[#313244] rounded-lg p-3 text-xs mono text-[#a6e3a1] min-h-[90px] whitespace-pre flex items-center">Result will appear here...</div>
+        </div>
+      </div>
+
+      <!-- Stats Sub-Panel -->
+      <div class="bg-[#11111b] border border-[#313244] rounded-xl p-4 sm:p-5 space-y-3">
+        <h2 class="text-sm font-bold text-[#fab387] tracking-wider uppercase">📊 Descriptive Statistics</h2>
+        <div class="flex gap-2">
+          <input id="stats-input" type="text" value="4, 8, 15, 16, 23, 42, 55, 68" class="flex-1 bg-[#1e1e2e] border border-[#313244] rounded-lg px-3 py-2 mono text-xs outline-none focus:border-[#fab387]" placeholder="e.g. 10, 20, 25, 40">
+          <button onclick="computeStats()" class="px-4 py-2 rounded-lg bg-[#fab387] text-[#11111b] font-bold text-xs shadow hover:bg-[#fbc39e]">Analyze</button>
+        </div>
+        <div id="stats-result" class="bg-[#1e1e2e] border border-[#313244] rounded-lg p-3 text-xs mono text-[#cdd6f4] whitespace-pre min-h-[100px]">Enter numbers above and click Analyze.</div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="mt-4 text-center text-xs text-[#6c7086]">
+    Scientific Calculator & Math Assistant · Built with Python & Modern Web UI
+  </footer>
+
+  <!-- Web App Client Scripts -->
+  <script src="/static/app.js"></script>
+</body>
+</html>
